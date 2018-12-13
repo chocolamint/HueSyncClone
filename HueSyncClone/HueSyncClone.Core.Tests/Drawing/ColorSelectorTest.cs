@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Xunit;
 
 namespace HueSyncClone.Drawing
@@ -49,6 +52,56 @@ namespace HueSyncClone.Drawing
         }
 
         [Theory]
+        [InlineData("image1", Skip = "")]
+        [InlineData("image2", Skip = "")]
+        public void TestResultImage(string imageName)
+        {
+            using (var stream = GetType().Assembly.GetManifestResourceStream($"HueSyncClone.Images.{imageName}.jpg"))
+            using (var bitmap = (Bitmap)Image.FromStream(stream))
+            using (var thumb = new ImageEditor().Resize(bitmap, 72))
+            {
+                var colors = ColorPicker.GetColors(thumb);
+                var xyzColors = colors.Select(x => XyzColor.FromRgb(x));
+                var labSpace = new CieLabSpace();
+                var labColors = xyzColors.Select(x => CieLabColor.FromXyz(x)).ToArray();
+                var picked = ColorPicker.KmeansPlusPlus(labColors, labSpace, 4, 0).ToList();
+                var clusteres = picked.GroupBy(x => x.Cluster, x => x.Color).ToDictionary(x => x.Key, x => labSpace.GetCentroid(x.ToArray()));
+                var width = thumb.Width;
+                var height = thumb.Height;
+
+                using (var result = new Bitmap(width, height))
+                {
+                    var bitmapData = result.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+                    try
+                    {
+                        var pixels = new byte[bitmapData.Stride * height];
+                        Marshal.Copy(bitmapData.Scan0, pixels, 0, pixels.Length);
+                        var i = 0;
+                        for (var y = 0; y < height; y++)
+                        {
+                            for (var x = 0; x < width; x++)
+                            {
+                                var pos = y * bitmapData.Stride + x * 3;
+                                var color = clusteres[picked[i++].Cluster];
+                                var rgb = color.ToXyzColor().ToRgbColor();
+                                pixels[pos] = rgb.B;
+                                pixels[pos + 1] = rgb.G;
+                                pixels[pos + 2] = rgb.R;
+                            }
+                        }
+                        Marshal.Copy(pixels, 0, bitmapData.Scan0, pixels.Length);
+                    }
+                    finally
+                    {
+                        result.UnlockBits(bitmapData);
+                    }
+
+                    result.Save(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), $"{imageName}_clustered.jpg"));
+                }
+            }
+        }
+
+        [Theory]
         [InlineData("image1", "#578dd6", "#ddcab3", "#4f4446")]
         [InlineData("image2", "#4a1b86", "#150823", "#c4b2dc")]
         public void TestAll(string imageName, string expected1, string expected2, string expected3)
@@ -69,10 +122,10 @@ namespace HueSyncClone.Drawing
 
         private struct RgbSpace : ISpace<Color>
         {
-            public double GetDistance(Color x, Color y) 
+            public double GetDistance(Color x, Color y)
                 => Math.Sqrt(Math.Pow(x.R - y.R, 2) + Math.Pow(x.G - y.G, 2) + Math.Pow(x.B - y.B, 2));
 
-            public Color GetCentroid(IReadOnlyCollection<Color> xs) 
+            public Color GetCentroid(IReadOnlyCollection<Color> xs)
                 => Color.FromArgb((int)xs.Average(x => x.R), (int)xs.Average(x => x.G), (int)xs.Average(x => x.B));
         }
     }

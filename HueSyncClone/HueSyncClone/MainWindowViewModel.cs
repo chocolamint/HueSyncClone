@@ -158,15 +158,11 @@ namespace HueSyncClone
             {
                 try
                 {
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
-
                     var tasks = new List<Task>();
 
                     var colors = pickColors().Select(x => Color.FromRgb(x.R, x.G, x.B)).ToArray();
 
                     if (colors.SequenceEqual(Colors)) return;
-
-                    sw.Restart();
 
                     Colors.Clear();
                     foreach (var (color, index) in colors.Select((x, i) => (x, i)))
