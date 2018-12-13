@@ -67,6 +67,7 @@ namespace HueSyncClone
 
             using (var bitmap = (System.Drawing.Bitmap)System.Drawing.Image.FromFile(ImagePath))
             {
+                Colors.Clear();
                 var colors = ColorPicker.PickColors(bitmap, _lights.Count);
                 foreach (var color in colors)
                 {
