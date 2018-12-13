@@ -57,8 +57,8 @@ namespace HueSyncClone.Drawing
 
             var selected = ColorPicker.KmeansPlusPlus(colors, new RgbSpace(), 2, 0).ToArray();
 
-            Assert.Equal(new[] { colors[2], colors[3] }, selected[0]);
-            Assert.Equal(new[] { colors[0], colors[1] }, selected[1]);
+            Assert.Equal(new[] { Color.FromArgb(0, 0, 0), Color.FromArgb(0, 0, 0) }, selected[0]);
+            Assert.Equal(new[] { Color.FromArgb(255, 255, 255), Color.FromArgb(254, 254, 254) }, selected[1]);
         }
 
         [Theory]
