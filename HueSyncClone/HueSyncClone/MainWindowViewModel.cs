@@ -133,7 +133,8 @@ namespace HueSyncClone
                 {
                     await ChangeColorsAsync(() =>
                     {
-                        var slices = ImageEditor.SliceImage(bitmap, _lightCount);
+                        var thumb = ImageEditor.Resize(bitmap, 72);
+                        var slices = ImageEditor.SliceImage(thumb, _lightCount);
                         var colors = new System.Drawing.Color[_lightCount];
                         var tasks = new Task[_lightCount];
                         for (var i = 0; i < _lightCount; i++)
@@ -157,11 +158,17 @@ namespace HueSyncClone
             {
                 try
                 {
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+
                     var tasks = new List<Task>();
 
                     var colors = pickColors().Select(x => Color.FromRgb(x.R, x.G, x.B)).ToArray();
 
+                    Console.WriteLine($"PickColor: {sw.ElapsedMilliseconds:N0}ms");
+
                     if (colors.SequenceEqual(Colors)) return;
+
+                    sw.Restart();
 
                     Colors.Clear();
                     foreach (var (color, index) in colors.Select((x, i) => (x, i)))
@@ -176,6 +183,8 @@ namespace HueSyncClone
                     }
 
                     await Task.WhenAll(tasks);
+
+                    Console.WriteLine($"SetColorAsync: {sw.ElapsedMilliseconds:N0}ms");
                 }
                 finally
                 {
