@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Drawing\CieLabSpace.cs" />
     <Compile Include="Drawing\ColorSelector.cs" />
     <Compile Include="Drawing\CieLabColor.cs" />
     <Compile Include="Drawing\ISpace.cs" />

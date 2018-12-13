@@ -10,18 +10,22 @@ namespace HueSyncClone.Core.Drawing
 {
     public class ColorSelector
     {
-        public void SelectColor(Bitmap bitmap, int count)
+        public IEnumerable<CieLabColor> SelectColor(Bitmap bitmap, int count)
         {
             var (thumb, width, height) = Resize(bitmap, 72);
             using (thumb)
             {
                 var colors = GetColors(thumb, width, height);
-                var xyzColors = colors.Select(x => ToXyzColor(x));
-                var labColors = xyzColors.Select(x => ToCieLabColor(x));
+                var xyzColors = colors.Select(x => XyzColor.FromRgb(x));
+                var labColors = xyzColors.Select(x => CieLabColor.FromXyz(x));
+                var labSpace = new CieLabSpace();
+                var selections = KmeansPlusPlus(labColors.ToArray(), labSpace, count);
+
+                return selections.Select(x => labSpace.GetCentroid(x));
             }
         }
 
-        internal static IList<IList<TColor>> KmeansPlusPlus<TColor>(IReadOnlyList<TColor> colors, ISpace<TColor> space, int count, int? seed = null)
+        internal static List<TColor>[] KmeansPlusPlus<TColor>(IReadOnlyList<TColor> colors, ISpace<TColor> space, int count, int? seed = null)
         {
             var random = seed.HasValue ? new Random(seed.Value) : new Random();
 
@@ -88,56 +92,6 @@ namespace HueSyncClone.Core.Drawing
                     yield return colors[i];
                 }
             }
-        }
-
-        internal static CieLabColor ToCieLabColor(XyzColor xyz)
-        {
-            double F(double t) => t > 0.00885645167903563/* Math.Pow(6.0 / 29.0, 3) */
-                ? Math.Pow(t, 1.0 / 3.0)
-                : 7.78703703703704/* 1.0 / 3.0 * Math.Pow(29.0 / 6.0, 2)*/ * t + 0.137931034482759/* 4.0 / 29.0 */;
-
-            var x = xyz.X * 100;
-            var y = xyz.Y * 100;
-            var z = xyz.Z * 100;
-
-            var xn = 95.047;
-            var yn = 100.0;
-            var zn = 108.883;
-            //var yPerYn = Math.Sqrt(xyz.Y / whitePoint.Y);
-            //var ka = 175 / 198.04 * (whitePoint.X + whitePoint.Y);
-            //var kb = 70 / 218.11 * (whitePoint.Y + whitePoint.Z);
-
-            var fYPerYn = F(y / yn);
-
-            return new CieLabColor
-            (
-                116.0 * fYPerYn - 16.0,
-                500.0 * (F(x / xn) - fYPerYn),
-                200.0 * (fYPerYn - F(z / zn))
-            //100.0 * yPerYn,
-            //ka * (xyz.X / whitePoint.X - xyz.Y / whitePoint.Y) / yPerYn,
-            //kb * (xyz.Y / whitePoint.Y - xyz.Z / whitePoint.Z) / yPerYn
-            );
-        }
-
-        internal static XyzColor ToXyzColor(Color color)
-        {
-            double Linear(double c)
-            {
-                c = c / 255.0;
-                return c > 0.04045 ? Math.Pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
-            }
-
-            var r = Linear(color.R);
-            var g = Linear(color.G);
-            var b = Linear(color.B);
-
-            return new XyzColor
-            (
-                0.4124 * r + 0.3576 * g + 0.1805 * b,
-                0.2126 * r + 0.7152 * g + 0.0722 * b,
-                0.0193 * r + 0.1192 * g + 0.9505 * b
-            );
         }
 
         internal static IEnumerable<Color> GetColors(Bitmap bitmap, int width, int height)

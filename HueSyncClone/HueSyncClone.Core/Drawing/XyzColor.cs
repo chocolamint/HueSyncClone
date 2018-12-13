@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 
 namespace HueSyncClone.Core.Drawing
 {
@@ -13,6 +14,26 @@ namespace HueSyncClone.Core.Drawing
             X = x;
             Y = y;
             Z = z;
+        }
+
+        public static XyzColor FromRgb(Color color) 
+        {
+            double Linear(double c)
+            {
+                c = c / 255.0;
+                return c > 0.04045 ? Math.Pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
+            }
+
+            var r = Linear(color.R);
+            var g = Linear(color.G);
+            var b = Linear(color.B);
+
+            return new XyzColor
+            (
+                0.4124 * r + 0.3576 * g + 0.1805 * b,
+                0.2126 * r + 0.7152 * g + 0.0722 * b,
+                0.0193 * r + 0.1192 * g + 0.9505 * b
+            );
         }
 
         public bool Equals(XyzColor other)

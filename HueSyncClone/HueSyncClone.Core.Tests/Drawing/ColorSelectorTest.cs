@@ -51,7 +51,7 @@ namespace HueSyncClone.Drawing
         public void TestRgbToLab(int red, int green, int blue, double l, double a, double b)
         {
             Assert.Equal(new CieLabColor(l, a, b),
-                ColorSelector.ToCieLabColor(ColorSelector.ToXyzColor(Color.FromArgb(red, green, blue)))
+                CieLabColor.FromXyz(XyzColor.FromRgb(Color.FromArgb(red, green, blue)))
             );
         }
 
@@ -70,6 +70,16 @@ namespace HueSyncClone.Drawing
 
             Assert.Equal(new[] { colors[2], colors[3] }, selected[0]);
             Assert.Equal(new[] { colors[0], colors[1] }, selected[1]);
+        }
+
+        [Fact]
+        public void TestAll()
+        {
+            using (var stream = GetType().Assembly.GetManifestResourceStream($"HueSyncClone.Images.image1.jpg"))
+            using (var bitmap = (Bitmap)Image.FromStream(stream))
+            {
+                var colors = new ColorSelector().SelectColor(bitmap, 4);
+            }
         }
 
         private struct RgbSpace : ISpace<Color>
