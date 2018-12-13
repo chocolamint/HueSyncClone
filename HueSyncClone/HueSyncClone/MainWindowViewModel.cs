@@ -77,51 +77,6 @@ namespace HueSyncClone
             Initialize();
         }
 
-        private async void OnTick(object sender, EventArgs e)
-        {
-            if (SynchronizeScreen)
-            {
-                using (var bitmap = ScreenShot.CaptureScreen())
-                {
-                    await ChangeColorsAsync(bitmap);
-                }
-            }
-        }
-
-        private async void OnFileSelected(string[] filePaths)
-        {
-            if (IsFileDroppable)
-            {
-                ImagePath = filePaths.First();
-
-                using (var bitmap = (System.Drawing.Bitmap)System.Drawing.Image.FromFile(ImagePath))
-                {
-                    await ChangeColorsAsync(bitmap);
-                }
-            }
-        }
-
-        private async Task ChangeColorsAsync(System.Drawing.Bitmap bitmap)
-        {
-            var tasks = new List<Task>();
-
-            Colors.Clear();
-
-            var colors = ColorPicker.PickColors(bitmap, _lights.Count);
-            foreach (var (color, index) in colors.Select((x, i) => (x, i)))
-            {
-                Colors.Add(Color.FromRgb(color.R, color.G, color.B));
-
-                var xy = XyColor.FromRgb(color.R, color.G, color.B);
-                var brightness = new[] { color.R, color.G, color.B }.Max();
-
-                var task = _lights[index].SetColorAsync(xy, brightness);
-                tasks.Add(task);
-            }
-
-            await Task.WhenAll(tasks);
-        }
-
         private async void Initialize()
         {
             var userName = HueUserNameStore.Load();
@@ -152,6 +107,51 @@ namespace HueSyncClone
             _timer = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, OnTick, Dispatcher.CurrentDispatcher);
 
             IsFileDroppable = true;
+        }
+
+        private async void OnFileSelected(string[] filePaths)
+        {
+            if (IsFileDroppable)
+            {
+                ImagePath = filePaths.First();
+
+                using (var bitmap = (System.Drawing.Bitmap)System.Drawing.Image.FromFile(ImagePath))
+                {
+                    await ChangeColorsAsync(bitmap);
+                }
+            }
+        }
+
+        private async void OnTick(object sender, EventArgs e)
+        {
+            if (SynchronizeScreen)
+            {
+                using (var bitmap = ScreenShot.CaptureScreen())
+                {
+                    await ChangeColorsAsync(bitmap);
+                }
+            }
+        }
+
+        private async Task ChangeColorsAsync(System.Drawing.Bitmap bitmap)
+        {
+            var tasks = new List<Task>();
+
+            Colors.Clear();
+
+            var colors = ColorPicker.PickColors(bitmap, _lights.Count);
+            foreach (var (color, index) in colors.Select((x, i) => (x, i)))
+            {
+                Colors.Add(Color.FromRgb(color.R, color.G, color.B));
+
+                var xy = XyColor.FromRgb(color.R, color.G, color.B);
+                var brightness = new[] { color.R, color.G, color.B }.Max();
+
+                var task = _lights[index].SetColorAsync(xy, brightness);
+                tasks.Add(task);
+            }
+
+            await Task.WhenAll(tasks);
         }
 
         private void SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
