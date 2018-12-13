@@ -35,6 +35,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -45,6 +46,7 @@
   <ItemGroup>
     <Compile Include="Drawing\ColorSelector.cs" />
     <Compile Include="Drawing\CieLabColor.cs" />
+    <Compile Include="Drawing\ISpace.cs" />
     <Compile Include="Drawing\XyzColor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

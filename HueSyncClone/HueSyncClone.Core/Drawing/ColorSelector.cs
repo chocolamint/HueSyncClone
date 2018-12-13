@@ -21,6 +21,75 @@ namespace HueSyncClone.Core.Drawing
             }
         }
 
+        internal static IList<IList<TColor>> KmeansPlusPlus<TColor>(IReadOnlyList<TColor> colors, ISpace<TColor> space, int count, int? seed = null)
+        {
+            var random = seed.HasValue ? new Random(seed.Value) : new Random();
+
+            var centroids = new List<TColor> { colors[random.Next(colors.Count)] };
+            foreach (var c in SelectCentroids().Take(count - 1))
+            {
+                centroids.Add(c);
+            }
+
+            var preClusters = new List<TColor>[count];
+            while (true)
+            {
+                var clusters = Enumerable.Range(0, count).Select(_ => new List<TColor>()).ToArray();
+                foreach (var color in colors)
+                {
+                    clusters[GetNearestCentroidIndex(color)].Add(color);
+                }
+
+                if (Enumerable.Range(0, count).All(i => preClusters[i] != null && clusters[i].SequenceEqual(preClusters[i])))
+                {
+                    return clusters;
+                }
+
+                for (var i = 0; i < count; i++)
+                {
+                    centroids[i] = space.GetCentroid(clusters[i]);
+                    preClusters[i] = clusters[i];
+                }
+            }
+
+            int GetNearestCentroidIndex(TColor color)
+            {
+                var minDistance = double.MaxValue;
+                var minIndex = -1;
+                for (var i = 0; i < centroids.Count; i++)
+                {
+                    var d = space.GetDistance(centroids[i], color);
+                    if (d < minDistance)
+                    {
+                        minDistance = d;
+                        minIndex = i;
+                    }
+                }
+
+                return minIndex;
+            }
+
+            IEnumerable<TColor> SelectCentroids()
+            {
+                var distances = colors.Select(x => centroids.Min(c => Math.Pow(space.GetDistance(x, c), 2))).ToArray();
+                var sum = distances.Sum();
+
+                while (true)
+                {
+                    var init = random.NextDouble();
+                    var d = 0.0;
+                    var i = 0;
+                    for (; i < colors.Count; i++)
+                    {
+                        d += distances[i] / sum;
+                        if (d > init) break;
+                    }
+
+                    yield return colors[i];
+                }
+            }
+        }
+
         internal static CieLabColor ToCieLabColor(XyzColor xyz)
         {
             double F(double t) => t > 0.00885645167903563/* Math.Pow(6.0 / 29.0, 3) */
@@ -45,9 +114,9 @@ namespace HueSyncClone.Core.Drawing
                 116.0 * fYPerYn - 16.0,
                 500.0 * (F(x / xn) - fYPerYn),
                 200.0 * (fYPerYn - F(z / zn))
-                //100.0 * yPerYn,
-                //ka * (xyz.X / whitePoint.X - xyz.Y / whitePoint.Y) / yPerYn,
-                //kb * (xyz.Y / whitePoint.Y - xyz.Z / whitePoint.Z) / yPerYn
+            //100.0 * yPerYn,
+            //ka * (xyz.X / whitePoint.X - xyz.Y / whitePoint.Y) / yPerYn,
+            //kb * (xyz.Y / whitePoint.Y - xyz.Z / whitePoint.Z) / yPerYn
             );
         }
 

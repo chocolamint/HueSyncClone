@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using HueSyncClone.Core.Drawing;
 using Xunit;
@@ -51,6 +53,32 @@ namespace HueSyncClone.Drawing
             Assert.Equal(new CieLabColor(l, a, b),
                 ColorSelector.ToCieLabColor(ColorSelector.ToXyzColor(Color.FromArgb(red, green, blue)))
             );
+        }
+
+        [Fact]
+        public void TestKmeansPlusPlus()
+        {
+            var colors = new[]
+            {
+                Color.FromArgb(255, 255, 255),
+                Color.FromArgb(200, 200, 200),
+                Color.FromArgb(140, 24, 53),
+                Color.FromArgb(0, 0, 0)
+            };
+
+            var selected = ColorSelector.KmeansPlusPlus(colors, new RgbSpace(), 2, 0);
+
+            Assert.Equal(new[] { colors[2], colors[3] }, selected[0]);
+            Assert.Equal(new[] { colors[0], colors[1] }, selected[1]);
+        }
+
+        private struct RgbSpace : ISpace<Color>
+        {
+            public double GetDistance(Color x, Color y) 
+                => Math.Sqrt(Math.Pow(x.R - y.R, 2) + Math.Pow(x.G - y.G, 2) + Math.Pow(x.B - y.B, 2));
+
+            public Color GetCentroid(IReadOnlyCollection<Color> xs) 
+                => Color.FromArgb((int)xs.Average(x => x.R), (int)xs.Average(x => x.G), (int)xs.Average(x => x.B));
         }
     }
 }
