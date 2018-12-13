@@ -82,13 +82,22 @@ namespace HueSyncClone.Drawing
             Assert.Equal(new[] { colors[0], colors[1] }, selected[1]);
         }
 
-        [Fact]
-        public void TestAll()
+        [Theory]
+        [InlineData("image1", "#ddcab3", "#578dd6", "#4f4446")]
+        [InlineData("image2", "#140823", "#4a1b86", "#c4b2dc")]
+        public void TestAll(string imageName, string expected1, string expected2, string expected3)
         {
-            using (var stream = GetType().Assembly.GetManifestResourceStream($"HueSyncClone.Images.image1.jpg"))
+            using (var stream = GetType().Assembly.GetManifestResourceStream($"HueSyncClone.Images.{imageName}.jpg"))
             using (var bitmap = (Bitmap)Image.FromStream(stream))
             {
-                var colors = new ColorSelector().SelectColor(bitmap, 4);
+                var colors = new ColorSelector(0).SelectColor(bitmap, 3).ToArray();
+
+                string ToHexString(Color color) => $"#{color.R:x2}{color.G:x2}{color.B:x2}";
+
+                Assert.Equal(3, colors.Length);
+                Assert.Equal(expected1, ToHexString(colors[0]));
+                Assert.Equal(expected2, ToHexString(colors[1]));
+                Assert.Equal(expected3, ToHexString(colors[2]));
             }
         }
 

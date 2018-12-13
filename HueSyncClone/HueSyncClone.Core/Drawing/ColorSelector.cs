@@ -10,6 +10,18 @@ namespace HueSyncClone.Core.Drawing
 {
     public class ColorSelector
     {
+        private readonly int? _seed;
+
+        public ColorSelector()
+        {
+
+        }
+
+        internal ColorSelector(int seed)
+        {
+            _seed = seed;
+        }
+
         public IEnumerable<Color> SelectColor(Bitmap bitmap, int count)
         {
             var (thumb, width, height) = Resize(bitmap, 72);
@@ -19,7 +31,7 @@ namespace HueSyncClone.Core.Drawing
                 var xyzColors = colors.Select(x => XyzColor.FromRgb(x));
                 var labColors = xyzColors.Select(x => CieLabColor.FromXyz(x));
                 var labSpace = new CieLabSpace();
-                var selections = KmeansPlusPlus(labColors.ToArray(), labSpace, count);
+                var selections = KmeansPlusPlus(labColors.ToArray(), labSpace, count, _seed);
 
                 return selections.Select(x => labSpace.GetCentroid(x)).Select(x => x.ToXyzColor().ToRgbColor());
             }
