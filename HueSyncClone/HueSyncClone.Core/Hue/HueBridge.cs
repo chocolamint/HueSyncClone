@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
@@ -16,7 +15,7 @@ namespace HueSyncClone.Hue
     {
         private static readonly HttpClient _httpClient = new HttpClient();
         private readonly string _ipAddress;
-        
+
         public string UserName { get; set; }
 
         public HueBridge(string ipAddress)
@@ -91,29 +90,9 @@ namespace HueSyncClone.Hue
             return lights;
         }
 
-        /// <summary>
-        /// Gets a list of all scenes currently stored in the bridge.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Gets a list of all scenes currently stored in the bridge.
-        /// Scenes are represented by a scene id, a name and a list of lights which are part of the scene.
-        /// The name resource can contain a "friendly name" or can contain a unique code.
-        /// Scenes are stored in the bridge.
-        /// This means that scene light state settings can easily be retrieved by developers (using ADD link) and shown in their respective UI’s.
-        /// Cached scenes (scenes stored with PUT) will be deprecated in the future.
-        /// </para>
-        /// <para>
-        /// Additionally, bridge scenes should not be confused with the preset scenes stored in the Android and iOS Hue apps.
-        /// In the apps these scenes are stored internally.
-        /// Once activated they may then appear as a bridge scene.
-        /// </para>
-        /// </remarks>
-        /// <param name="cancellationToken"></param>
-        /// <returns>Returns a list of all scenes in the bridge.</returns>
-        public async Task<IReadOnlyList<HueScene>> GetScenesAsync(CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<HueLightGroup>> GetGroupsAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.GetAsync($"http://{_ipAddress}/api/{UserName}/scenes", cancellationToken);
+            var response = await _httpClient.GetAsync($"http://{_ipAddress}/api/{UserName}/groups", cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
@@ -121,38 +100,34 @@ namespace HueSyncClone.Hue
 
             var root = JsonConvert.DeserializeObject<JObject>(json);
 
-            var scenes = new List<HueScene>(root.Count);
+            var groups = new List<HueLightGroup>(root.Count);
 
             foreach (var p in root)
             {
-                var scene = new HueScene { Id = p.Key };
+                var group = new HueLightGroup(this) { Id = p.Key };
 
-                JsonConvert.PopulateObject(p.Value.ToString(), scene);
+                JsonConvert.PopulateObject(p.Value.ToString(), group);
 
-                scenes.Add(scene);
+                groups.Add(group);
             }
 
-            return scenes;
+            return groups;
         }
 
-        public Task SetSceneAsync(HueScene scene, CancellationToken cancellationToken = default) 
-            => SetSceneAsync(scene.Id, cancellationToken);
-
-        public async Task SetSceneAsync(string sceneId, CancellationToken cancellationToken = default)
+        internal async Task PutLightStateAsync(HueLight light, object state, CancellationToken cancellationToken)
         {
             var response = await _httpClient.PutAsync(
-                $"http://{_ipAddress}/api/{UserName}/groups/0/action",
-                JsonContent(new { scene = sceneId }),
+                $"http://{_ipAddress}/api/{UserName}/lights/{light.Id}/state",
+                JsonContent(state),
                 cancellationToken);
 
             response.EnsureSuccessStatusCode();
         }
 
-        internal async Task PutLightStateAsync(HueLight light, object state, CancellationToken cancellationToken)
+        internal async Task PutGroupStateAsync(HueLightGroup group, object state, CancellationToken cancellationToken)
         {
-            var sw = Stopwatch.StartNew();
             var response = await _httpClient.PutAsync(
-                $"http://{_ipAddress}/api/{UserName}/lights/{light.Id}/state",
+                $"http://{_ipAddress}/api/{UserName}/groups/{group.Id}/action",
                 JsonContent(state),
                 cancellationToken);
 

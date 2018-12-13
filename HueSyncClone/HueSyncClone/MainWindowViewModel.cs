@@ -22,7 +22,8 @@ namespace HueSyncClone
         private bool _isConnecting = true;
         private string _imagePath;
         private IReadOnlyList<HueLight> _lights;
-        private int _lightCount;
+        private HueLightGroup _group;
+
         private DispatcherTimer _timer;
         private bool _isFileDroppable;
         private bool _synchronizeScreen;
@@ -32,7 +33,6 @@ namespace HueSyncClone
         public IHueUserNameStore HueUserNameStore { get; set; } = new FileHueUserNameStore();
 
         public ColorPicker ColorPicker { get; set; } = new ColorPicker(new Random().Next());
-        public ImageEditor ImageEditor { get; set; } = new ImageEditor();
 
         public bool IsConnecting
         {
@@ -50,12 +50,6 @@ namespace HueSyncClone
         {
             get => _imagePath;
             set => SetField(ref _imagePath, value);
-        }
-
-        public int LightCount
-        {
-            get => _lightCount;
-            set => SetField(ref _lightCount, value);
         }
 
         public bool IsFileDroppable
@@ -102,8 +96,8 @@ namespace HueSyncClone
             IsConnecting = true;
 
             _lights = await bridge.GetLightsAsync();
+            _group = (await bridge.GetGroupsAsync()).First();
 
-            LightCount = _lights.Count;
             IsConnecting = false;
             IsAuthenticated = true;
 
@@ -112,7 +106,7 @@ namespace HueSyncClone
             IsFileDroppable = true;
         }
 
-        private async void OnFileSelected(string[] filePaths)
+        private void OnFileSelected(string[] filePaths)
         {
             if (IsFileDroppable)
             {
@@ -120,47 +114,7 @@ namespace HueSyncClone
 
                 using (var bitmap = (System.Drawing.Bitmap)System.Drawing.Image.FromFile(ImagePath))
                 {
-                    await ChangeColorsAsync(() => ColorPicker.PickColors(bitmap, _lightCount));
-                }
-            }
-        }
-
-        private async void OnTick(object sender, EventArgs e)
-        {
-            if (SynchronizeScreen)
-            {
-                using (var bitmap = ScreenShot.CaptureScreen())
-                {
-                    await ChangeColorsAsync(() =>
-                    {
-                        var thumb = ImageEditor.Resize(bitmap, 72);
-                        var slices = ImageEditor.SliceImage(thumb, _lightCount);
-                        var colors = new System.Drawing.Color[_lightCount];
-                        var tasks = new Task[_lightCount];
-                        for (var i = 0; i < _lightCount; i++)
-                        {
-                            var index = i;
-                            tasks[index] = Task.Run(() =>
-                            {
-                                colors[index] = ColorPicker.PickColors(slices[index], 3).First();
-                            });
-                        }
-                        Task.WaitAll(tasks);
-                        return colors;
-                    });
-                }
-            }
-        }
-
-        private async Task ChangeColorsAsync(Func<IEnumerable<System.Drawing.Color>> pickColors)
-        {
-            if (Interlocked.CompareExchange(ref _changing, 1, 0) == 0)
-            {
-                try
-                {
-                    var tasks = new List<Task>();
-
-                    var colors = pickColors().Select(x => Color.FromRgb(x.R, x.G, x.B)).ToArray();
+                    var colors = ColorPicker.PickColors(bitmap, _lights.Count).Select(x => Color.FromRgb(x.R, x.G, x.B)).ToArray();
 
                     if (colors.SequenceEqual(Colors)) return;
 
@@ -172,15 +126,37 @@ namespace HueSyncClone
                         var xy = XyColor.FromRgb(color.R, color.G, color.B);
                         var brightness = new[] { color.R, color.G, color.B }.Max();
 
-                        var task = _lights[index].SetColorAsync(xy, brightness);
-                        tasks.Add(task);
+                        _lights[index].SetColorAsync(xy, brightness);
                     }
-
-                    await Task.WhenAll(tasks);
                 }
-                finally
+            }
+        }
+
+        private async void OnTick(object sender, EventArgs e)
+        {
+            if (SynchronizeScreen)
+            {
+                if (Interlocked.CompareExchange(ref _changing, 1, 0) == 0)
                 {
-                    _changing = 0;
+                    try
+                    {
+                        using (var bitmap = ScreenShot.CaptureScreen())
+                        {
+                            var color = ColorPicker.PickColors(bitmap, 1).First();
+
+                            Colors.Clear();
+                            Colors.Add(Color.FromRgb(color.R, color.G, color.B));
+
+                            var xy = XyColor.FromRgb(color.R, color.G, color.B);
+                            var brightness = new[] { color.R, color.G, color.B }.Max();
+
+                            await _group.SetColorAsync(xy, brightness);
+                        }
+                    }
+                    finally
+                    {
+                        _changing = 0;
+                    }
                 }
             }
         }

@@ -68,6 +68,7 @@ namespace HueSyncClone.Hue
 
         public Task SetColorAsync(XyColor color, int brightness, CancellationToken cancellationToken = default)
         {
+            State.On = true;
             State.Xy = color;
             State.Brightness = brightness;
             return _bridge.PutLightStateAsync(this, new { on = true, xy = new[] { color.X, color.Y }, bri = brightness }, cancellationToken);

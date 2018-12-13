@@ -21,7 +21,6 @@
             <DoubleAnimation Storyboard.TargetProperty="(FrameworkElement.Height)" To="0" Duration="0:00:00.5" />
         </Storyboard>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <core:DivideConverter x:Key="DivideConverter"/>
     </Window.Resources>
     <i:Interaction.Behaviors>
         <core:DropFileBehavior Command="{Binding OnFileSelectedCommand}"/>
@@ -93,10 +92,10 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Image Grid.Row="0" Source="{Binding ImagePath}"/>
-            <ItemsControl Grid.Row="1" ItemsSource="{Binding Colors}" x:Name="ColorsContainer">
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding Colors}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <UniformGrid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Rows="1" Columns="{Binding LightCount}"/>
+                        <UniformGrid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Rows="1" Columns="{Binding Colors.Count}"/>
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>

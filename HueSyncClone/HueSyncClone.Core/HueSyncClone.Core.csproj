@@ -59,6 +59,7 @@
     <Compile Include="Hue\ColorTemperature.cs" />
     <Compile Include="Hue\HueBridge.cs" />
     <Compile Include="Hue\HueLight.cs" />
+    <Compile Include="Hue\HueLightGroup.cs" />
     <Compile Include="Hue\HueSaturationColor.cs" />
     <Compile Include="Hue\HueScene.cs" />
     <Compile Include="Hue\LightAlertEffect.cs" />
