@@ -1,11 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
 using HueSyncClone.Core;
@@ -53,7 +52,7 @@ namespace HueSyncClone
 
         public ObservableCollection<Color> Colors { get; } = new ObservableCollection<Color>();
 
-        public ICommand OnFileSelectedCommand { get; } 
+        public ICommand OnFileSelectedCommand { get; }
 
         public MainWindowViewModel()
         {
@@ -69,9 +68,13 @@ namespace HueSyncClone
             {
                 Colors.Clear();
                 var colors = ColorPicker.PickColors(bitmap, _lights.Count);
-                foreach (var color in colors)
+                foreach (var (color, index) in colors.Select((x, i) => (x, i)))
                 {
                     Colors.Add(Color.FromRgb(color.R, color.G, color.B));
+
+                    var xy = XyColor.FromRgb(color.R, color.G, color.B);
+                    var brightness = new[]{ color.R, color.G, color.B }.Max();
+                    _lights[index].SetColorAsync(xy, brightness);
                 }
             }
         }

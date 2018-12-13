@@ -20,6 +20,25 @@ namespace HueSyncClone.Hue
             Y = y;
         }
 
+        public static XyColor FromRgb(int red, int green, int blue)
+        {
+            double ApplyGammaCorrection(double c) => c > 0.04045
+                ? Math.Pow((c + 0.055) / 1.055, 2.4)
+                : c / 12.92;
+
+            var r = ApplyGammaCorrection(red);
+            var g = ApplyGammaCorrection(green);
+            var b = ApplyGammaCorrection(blue);
+
+            var x = r * 0.664511 + g * 0.154324 + b * 0.162028;
+            var y = r * 0.283881 + g * 0.668433 + b * 0.047685;
+            var z = r * 0.000088 + g * 0.072310 + b * 0.986039;
+
+            return Math.Abs(x + y + z) < double.Epsilon
+                ? new XyColor(0, 0)
+                : new XyColor(x / (x + y + z), y / (x + y + z));
+        }
+
         public bool Equals(XyColor other)
         {
             return X.Equals(other.X) && Y.Equals(other.Y);
