@@ -13,6 +13,8 @@ namespace HueSyncClone.Drawing
     {
         private readonly int? _randomSeed;
 
+        public ImageEditor ImageEditor { get; set; } = new ImageEditor();
+
         public ColorPicker()
         {
 
@@ -25,10 +27,9 @@ namespace HueSyncClone.Drawing
 
         public IEnumerable<Color> PickColors(Bitmap bitmap, int count)
         {
-            var (thumb, width, height) = Resize(bitmap, 72);
-            using (thumb)
+            using (var thumb = ImageEditor.Resize(bitmap, 72))
             {
-                var colors = GetColors(thumb, width, height);
+                var colors = GetColors(thumb);
                 var xyzColors = colors.Select(x => XyzColor.FromRgb(x));
                 var labSpace = new CieLabSpace();
                 var labColors = xyzColors.Select(x => CieLabColor.FromXyz(x)).ToArray();
@@ -42,62 +43,11 @@ namespace HueSyncClone.Drawing
             }
         }
 
-        internal static (Bitmap thumb, int width, int height) Resize(Bitmap bitmap, int size)
+        internal static IEnumerable<Color> GetColors(Bitmap bitmap)
         {
-            var originalWidth = bitmap.Width;
-            var originalHeight = bitmap.Height;
+            var width = bitmap.Width;
+            var height = bitmap.Height;
 
-            if (originalWidth <= size && originalHeight <= size) return (bitmap, originalWidth, originalHeight);
-
-            var resizedWidth = originalWidth > originalHeight ? size : originalWidth * size / originalHeight;
-            var resizedHeight = originalHeight > originalWidth ? size : originalHeight * size / originalWidth;
-            var resized = new Bitmap(resizedWidth, resizedHeight);
-
-            using (var g = Graphics.FromImage(resized))
-            {
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                g.DrawImage(bitmap, 0, 0, resizedWidth, resizedHeight);
-
-                var rotateFlip = GetRotateFlip(bitmap);
-                resized.RotateFlip(rotateFlip);
-                var rotate = (int)rotateFlip % 2 == 1;
-
-                return (resized, !rotate ? resizedWidth : resizedHeight, !rotate ? resizedHeight : resizedWidth);
-            }
-
-            RotateFlipType GetRotateFlip(Image image)
-            {
-                var property = image.PropertyItems.FirstOrDefault(p => p.Id == 0x0112);
-
-                if (property != null)
-                {
-                    var orientation = BitConverter.ToUInt16(property.Value, 0);
-                    switch (orientation)
-                    {
-                        case 1:
-                            return RotateFlipType.RotateNoneFlipNone;
-                        case 2:
-                            return RotateFlipType.RotateNoneFlipX;
-                        case 3:
-                            return RotateFlipType.Rotate180FlipNone;
-                        case 4:
-                            return RotateFlipType.RotateNoneFlipY;
-                        case 5:
-                            return RotateFlipType.Rotate270FlipY;
-                        case 6:
-                            return RotateFlipType.Rotate90FlipNone;
-                        case 7:
-                            return RotateFlipType.Rotate90FlipY;
-                        case 8:
-                            return RotateFlipType.Rotate270FlipNone;
-                    }
-                }
-                return RotateFlipType.RotateNoneFlipNone;
-            }
-        }
-
-        internal static IEnumerable<Color> GetColors(Bitmap bitmap, int width, int height)
-        {
             var bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, bitmap.PixelFormat);
             try
             {

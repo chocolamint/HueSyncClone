@@ -59,6 +59,7 @@
   <ItemGroup>
     <Compile Include="Drawing\CieLabColorTest.cs" />
     <Compile Include="Drawing\ColorSelectorTest.cs" />
+    <Compile Include="Drawing\ImageEditorTest.cs" />
     <Compile Include="Drawing\XyzColorTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

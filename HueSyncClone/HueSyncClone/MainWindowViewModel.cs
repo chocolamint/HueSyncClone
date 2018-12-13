@@ -32,7 +32,7 @@ namespace HueSyncClone
         public IHueUserNameStore HueUserNameStore { get; set; } = new FileHueUserNameStore();
 
         public ColorPicker ColorPicker { get; set; } = new ColorPicker(new Random().Next());
-        public ImageSlicer ImageSlicer { get; set; } = new ImageSlicer();
+        public ImageEditor ImageEditor { get; set; } = new ImageEditor();
 
         public bool IsConnecting
         {
@@ -133,7 +133,7 @@ namespace HueSyncClone
                 {
                     await ChangeColorsAsync(() =>
                     {
-                        var slices = ImageSlicer.SliceImage(bitmap, _lightCount);
+                        var slices = ImageEditor.SliceImage(bitmap, _lightCount);
                         var colors = new System.Drawing.Color[_lightCount];
                         var tasks = new Task[_lightCount];
                         for (var i = 0; i < _lightCount; i++)

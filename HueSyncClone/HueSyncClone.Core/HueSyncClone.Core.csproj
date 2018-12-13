@@ -52,7 +52,7 @@
     <Compile Include="Drawing\CieLabSpace.cs" />
     <Compile Include="Drawing\ColorPicker.cs" />
     <Compile Include="Drawing\CieLabColor.cs" />
-    <Compile Include="Drawing\ImageSlicer.cs" />
+    <Compile Include="Drawing\ImageEditor.cs" />
     <Compile Include="Drawing\ISpace.cs" />
     <Compile Include="Drawing\XyzColor.cs" />
     <Compile Include="Hue\ColorMode.cs" />
