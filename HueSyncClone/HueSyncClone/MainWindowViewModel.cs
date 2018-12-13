@@ -134,7 +134,18 @@ namespace HueSyncClone
                     await ChangeColorsAsync(() =>
                     {
                         var slices = ImageSlicer.SliceImage(bitmap, _lightCount);
-                        return slices.Select(x => ColorPicker.PickColors(x, 4).First());
+                        var colors = new System.Drawing.Color[_lightCount];
+                        var tasks = new Task[_lightCount];
+                        for (var i = 0; i < _lightCount; i++)
+                        {
+                            var index = i;
+                            tasks[index] = Task.Run(() =>
+                            {
+                                colors[index] = ColorPicker.PickColors(slices[index], 3).First();
+                            });
+                        }
+                        Task.WaitAll(tasks);
+                        return colors;
                     });
                 }
             }
