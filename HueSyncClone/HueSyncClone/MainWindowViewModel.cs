@@ -137,12 +137,14 @@ namespace HueSyncClone
         {
             var tasks = new List<Task>();
 
-            Colors.Clear();
+            var colors = ColorPicker.PickColors(bitmap, _lights.Count).Select(x => Color.FromRgb(x.R, x.G, x.B)).ToArray();
 
-            var colors = ColorPicker.PickColors(bitmap, _lights.Count);
+            if (colors.SequenceEqual(Colors)) return;
+
+            Colors.Clear();
             foreach (var (color, index) in colors.Select((x, i) => (x, i)))
             {
-                Colors.Add(Color.FromRgb(color.R, color.G, color.B));
+                Colors.Add(color);
 
                 var xy = XyColor.FromRgb(color.R, color.G, color.B);
                 var brightness = new[] { color.R, color.G, color.B }.Max();
