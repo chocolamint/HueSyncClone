@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.28010.2046
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HueSyncClone", "HueSyncClone\HueSyncClone.csproj", "{210D9414-B443-4A4D-A159-E48EB441DBF3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HueSyncClone.Core", "HueSyncClone.Core\HueSyncClone.Core.csproj", "{BDBC8071-47F9-4B7E-ACDB-427EB8E44512}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{210D9414-B443-4A4D-A159-E48EB441DBF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{210D9414-B443-4A4D-A159-E48EB441DBF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{210D9414-B443-4A4D-A159-E48EB441DBF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDBC8071-47F9-4B7E-ACDB-427EB8E44512}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDBC8071-47F9-4B7E-ACDB-427EB8E44512}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDBC8071-47F9-4B7E-ACDB-427EB8E44512}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDBC8071-47F9-4B7E-ACDB-427EB8E44512}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
