@@ -7,7 +7,7 @@
     <ProjectGuid>{BDBC8071-47F9-4B7E-ACDB-427EB8E44512}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>HueSyncClone.Core</RootNamespace>
+    <RootNamespace>HueSyncClone</RootNamespace>
     <AssemblyName>HueSyncClone.Core</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -32,10 +32,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -49,7 +53,20 @@
     <Compile Include="Drawing\CieLabColor.cs" />
     <Compile Include="Drawing\ISpace.cs" />
     <Compile Include="Drawing\XyzColor.cs" />
+    <Compile Include="Hue\ColorMode.cs" />
+    <Compile Include="Hue\ColorTemperature.cs" />
+    <Compile Include="Hue\HueBridge.cs" />
+    <Compile Include="Hue\HueLight.cs" />
+    <Compile Include="Hue\HueSaturationColor.cs" />
+    <Compile Include="Hue\HueScene.cs" />
+    <Compile Include="Hue\LightAlertEffect.cs" />
+    <Compile Include="Hue\LightEffect.cs" />
+    <Compile Include="Hue\LightState.cs" />
+    <Compile Include="Hue\XyColor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

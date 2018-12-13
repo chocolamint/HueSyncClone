@@ -1,0 +1,150 @@
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace HueSyncClone.Hue
+{
+    [DebuggerDisplay("Bridge({_ipAddressOrHost,nq})")]
+    public class HueBridge
+    {
+        private static readonly HttpClient _httpClient = new HttpClient();
+        private readonly string _ipAddressOrHost;
+        private readonly string _userName;
+
+        public HueBridge(string ipAddressOrHost, string userName)
+        {
+            _ipAddressOrHost = ipAddressOrHost;
+            _userName = userName;
+        }
+
+        public static async Task<IReadOnlyList<HueBridge>> GetBridgesAsync(string userName)
+        {
+            var json = await _httpClient.GetStringAsync("https://www.meethue.com/api/nupnp");
+            var result = JsonConvert.DeserializeObject<JObject[]>(json);
+            return result.Select(x => new HueBridge(x["internalipaddress"].ToString(), userName)).ToList();
+        }
+
+        /// <summary>
+        /// Gets a list of all lights that have been discovered by the bridge.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns>
+        /// Returns a list of all lights in the system.
+        /// If there are no lights in the system then the bridge will return an empty.
+        /// </returns>
+        public async Task<IReadOnlyList<HueLight>> GetLightsAsync(CancellationToken cancellationToken = default)
+        {
+            var response = await _httpClient.GetAsync($"http://{_ipAddressOrHost}/api/{_userName}/lights", cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            var root = JsonConvert.DeserializeObject<JObject>(json);
+
+            var lights = new List<HueLight>(root.Count);
+
+            foreach (var p in root)
+            {
+                var light = new HueLight(this) { Id = p.Key };
+
+                JsonConvert.PopulateObject(p.Value.ToString(), light);
+
+                lights.Add(light);
+            }
+
+            return lights;
+        }
+
+        /// <summary>
+        /// Gets a list of all scenes currently stored in the bridge.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Gets a list of all scenes currently stored in the bridge.
+        /// Scenes are represented by a scene id, a name and a list of lights which are part of the scene.
+        /// The name resource can contain a "friendly name" or can contain a unique code.
+        /// Scenes are stored in the bridge.
+        /// This means that scene light state settings can easily be retrieved by developers (using ADD link) and shown in their respective UI’s.
+        /// Cached scenes (scenes stored with PUT) will be deprecated in the future.
+        /// </para>
+        /// <para>
+        /// Additionally, bridge scenes should not be confused with the preset scenes stored in the Android and iOS Hue apps.
+        /// In the apps these scenes are stored internally.
+        /// Once activated they may then appear as a bridge scene.
+        /// </para>
+        /// </remarks>
+        /// <param name="cancellationToken"></param>
+        /// <returns>Returns a list of all scenes in the bridge.</returns>
+        public async Task<IReadOnlyList<HueScene>> GetScenesAsync(CancellationToken cancellationToken = default)
+        {
+            var response = await _httpClient.GetAsync($"http://{_ipAddressOrHost}/api/{_userName}/scenes", cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            var root = JsonConvert.DeserializeObject<JObject>(json);
+
+            var scenes = new List<HueScene>(root.Count);
+
+            foreach (var p in root)
+            {
+                var scene = new HueScene { Id = p.Key };
+
+                JsonConvert.PopulateObject(p.Value.ToString(), scene);
+
+                scenes.Add(scene);
+            }
+
+            return scenes;
+        }
+
+        public Task SetSceneAsync(HueScene scene, CancellationToken cancellationToken = default) 
+            => SetSceneAsync(scene.Id, cancellationToken);
+
+        public async Task SetSceneAsync(string sceneId, CancellationToken cancellationToken = default)
+        {
+            var response = await _httpClient.PutAsync(
+                $"http://{_ipAddressOrHost}/api/{_userName}/groups/0/action",
+                new StringContent(JsonConvert.SerializeObject(new { scene = sceneId })),
+                cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        internal async Task PutLightStateAndSynchronizeAsync(HueLight light, object state, CancellationToken cancellationToken)
+        {
+            await PutLightStateAsync(light, state, cancellationToken);
+            await SynchronizeLightAsync(light, cancellationToken);
+        }
+
+        private async Task PutLightStateAsync(HueLight light, object state, CancellationToken cancellationToken)
+        {
+            var response = await _httpClient.PutAsync(
+                $"http://{_ipAddressOrHost}/api/{_userName}/lights/{light.Id}/state",
+                new StringContent(JsonConvert.SerializeObject(state)),
+                cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        private async Task SynchronizeLightAsync(HueLight light, CancellationToken cancellationToken)
+        {
+            var response = await _httpClient.GetAsync(
+                $"http://{_ipAddressOrHost}/api/{_userName}/lights/{light.Id}",
+                cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            JsonConvert.PopulateObject(json, light);
+        }
+    }
+}
