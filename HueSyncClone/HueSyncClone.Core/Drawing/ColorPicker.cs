@@ -8,21 +8,21 @@ using System.Runtime.InteropServices;
 
 namespace HueSyncClone.Drawing
 {
-    public class ColorSelector
+    public class ColorPicker
     {
         private readonly int? _seed;
 
-        public ColorSelector()
+        public ColorPicker()
         {
 
         }
 
-        internal ColorSelector(int seed)
+        internal ColorPicker(int seed)
         {
             _seed = seed;
         }
 
-        public IEnumerable<Color> SelectColor(Bitmap bitmap, int count)
+        public IEnumerable<Color> PickColors(Bitmap bitmap, int count)
         {
             var (thumb, width, height) = Resize(bitmap, 72);
             using (thumb)
@@ -37,7 +37,7 @@ namespace HueSyncClone.Drawing
             }
         }
 
-        internal static List<TColor>[] KmeansPlusPlus<TColor>(IReadOnlyList<TColor> colors, ISpace<TColor> space, int count, int? seed = null)
+        internal static IEnumerable<List<TColor>> KmeansPlusPlus<TColor>(IReadOnlyList<TColor> colors, ISpace<TColor> space, int count, int? seed = null)
         {
             var random = seed.HasValue ? new Random(seed.Value) : new Random();
 
@@ -58,7 +58,7 @@ namespace HueSyncClone.Drawing
 
                 if (Enumerable.Range(0, count).All(i => preClusters[i] != null && clusters[i].SequenceEqual(preClusters[i])))
                 {
-                    return clusters;
+                    return clusters.OrderByDescending(x => x.Count);
                 }
 
                 for (var i = 0; i < count; i++)

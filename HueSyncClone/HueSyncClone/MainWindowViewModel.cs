@@ -25,7 +25,7 @@ namespace HueSyncClone
 
         public IHueUserNameStore HueUserNameStore { get; set; } = new FileHueUserNameStore();
 
-        public ColorSelector ColorSelector { get; set; } = new ColorSelector();
+        public ColorPicker ColorPicker { get; set; } = new ColorPicker();
 
         public bool IsConnecting
         {
@@ -67,7 +67,7 @@ namespace HueSyncClone
 
             using (var bitmap = (System.Drawing.Bitmap)System.Drawing.Image.FromFile(ImagePath))
             {
-                var colors = ColorSelector.SelectColor(bitmap, _lights.Count);
+                var colors = ColorPicker.PickColors(bitmap, _lights.Count);
                 foreach (var color in colors)
                 {
                     Colors.Add(Color.FromRgb(color.R, color.G, color.B));
