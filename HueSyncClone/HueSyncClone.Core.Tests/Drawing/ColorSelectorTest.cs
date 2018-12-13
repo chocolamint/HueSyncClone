@@ -8,15 +8,21 @@ namespace HueSyncClone.Drawing
 {
     public class ColorSelectorTest
     {
-        [Fact]
-        public void Test()
+        [Theory]
+        [InlineData("image1", 72, 54)]
+        [InlineData("image2", 54, 72)]
+        public void Test(string imageName, int expectedWidth, int expectedHeight)
         {
-            var selector = new ColorSelector();
-            using (var stream = GetType().Assembly.GetManifestResourceStream("HueSyncClone.Images.image1.jpg"))
+            using (var stream = GetType().Assembly.GetManifestResourceStream($"HueSyncClone.Images.{imageName}.jpg"))
             using (var bitmap = (Bitmap)Image.FromStream(stream))
-            using (var thumb = selector.SelectColor(bitmap, 0))
             {
-                thumb.Save(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "test.jpg"));
+                var (thumb, width, height) = ColorSelector.Resize(bitmap, 72);
+                using (thumb)
+                {
+                    // thumb.Save(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), imageName + ".jpg"));
+                    Assert.Equal(expectedWidth, width);
+                    Assert.Equal(expectedHeight, height);
+                }
             }
         }
     }
