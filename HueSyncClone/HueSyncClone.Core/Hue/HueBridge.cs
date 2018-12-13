@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -9,24 +11,52 @@ using Newtonsoft.Json.Linq;
 
 namespace HueSyncClone.Hue
 {
-    [DebuggerDisplay("Bridge({_ipAddressOrHost,nq})")]
+    [DebuggerDisplay("Bridge({_ipAddress,nq})")]
     public class HueBridge
     {
         private static readonly HttpClient _httpClient = new HttpClient();
-        private readonly string _ipAddressOrHost;
-        private readonly string _userName;
+        private readonly string _ipAddress;
+        
+        public string UserName { get; set; }
 
-        public HueBridge(string ipAddressOrHost, string userName)
+        public HueBridge(string ipAddress)
         {
-            _ipAddressOrHost = ipAddressOrHost;
-            _userName = userName;
+            _ipAddress = ipAddress;
         }
 
-        public static async Task<IReadOnlyList<HueBridge>> GetBridgesAsync(string userName)
+        public static async Task<IReadOnlyList<HueBridge>> GetBridgesAsync()
         {
             var json = await _httpClient.GetStringAsync("https://www.meethue.com/api/nupnp");
             var result = JsonConvert.DeserializeObject<JObject[]>(json);
-            return result.Select(x => new HueBridge(x["internalipaddress"].ToString(), userName)).ToList();
+            return result.Select(x => new HueBridge(x["internalipaddress"].ToString())).ToList();
+        }
+
+        /// <summary>
+        /// Authorize specified device type, and set the <see cref="UserName"/> property.
+        /// </summary>
+        /// <param name="deviceType">Device type you want to authorize.</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns>It is <see cref="Task"/> that will be completed when the button pressed on the bridge.</returns>
+        public async Task AuthorizeAsync(string deviceType, CancellationToken cancellationToken)
+        {
+            while (true)
+            {
+                var response = await _httpClient.PostAsync($"http://{_ipAddress}/api", JsonContent(new { devicetype = deviceType }), cancellationToken);
+                var body = await response.Content.ReadAsStringAsync();
+
+                var results = (dynamic)JsonConvert.DeserializeObject(body);
+                var result = results[0];
+
+                if (result.success != null)
+                {
+                    UserName = result.success.username;
+                    return;
+                }
+
+                await Task.Delay(1000, cancellationToken);
+
+                cancellationToken.ThrowIfCancellationRequested();
+            }
         }
 
         /// <summary>
@@ -39,7 +69,7 @@ namespace HueSyncClone.Hue
         /// </returns>
         public async Task<IReadOnlyList<HueLight>> GetLightsAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.GetAsync($"http://{_ipAddressOrHost}/api/{_userName}/lights", cancellationToken);
+            var response = await _httpClient.GetAsync($"http://{_ipAddress}/api/{UserName}/lights", cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
@@ -83,7 +113,7 @@ namespace HueSyncClone.Hue
         /// <returns>Returns a list of all scenes in the bridge.</returns>
         public async Task<IReadOnlyList<HueScene>> GetScenesAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.GetAsync($"http://{_ipAddressOrHost}/api/{_userName}/scenes", cancellationToken);
+            var response = await _httpClient.GetAsync($"http://{_ipAddress}/api/{UserName}/scenes", cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
@@ -111,8 +141,8 @@ namespace HueSyncClone.Hue
         public async Task SetSceneAsync(string sceneId, CancellationToken cancellationToken = default)
         {
             var response = await _httpClient.PutAsync(
-                $"http://{_ipAddressOrHost}/api/{_userName}/groups/0/action",
-                new StringContent(JsonConvert.SerializeObject(new { scene = sceneId })),
+                $"http://{_ipAddress}/api/{UserName}/groups/0/action",
+                JsonContent(new { scene = sceneId }),
                 cancellationToken);
 
             response.EnsureSuccessStatusCode();
@@ -127,8 +157,8 @@ namespace HueSyncClone.Hue
         private async Task PutLightStateAsync(HueLight light, object state, CancellationToken cancellationToken)
         {
             var response = await _httpClient.PutAsync(
-                $"http://{_ipAddressOrHost}/api/{_userName}/lights/{light.Id}/state",
-                new StringContent(JsonConvert.SerializeObject(state)),
+                $"http://{_ipAddress}/api/{UserName}/lights/{light.Id}/state",
+                JsonContent(state),
                 cancellationToken);
 
             response.EnsureSuccessStatusCode();
@@ -137,7 +167,7 @@ namespace HueSyncClone.Hue
         private async Task SynchronizeLightAsync(HueLight light, CancellationToken cancellationToken)
         {
             var response = await _httpClient.GetAsync(
-                $"http://{_ipAddressOrHost}/api/{_userName}/lights/{light.Id}",
+                $"http://{_ipAddress}/api/{UserName}/lights/{light.Id}",
                 cancellationToken);
 
             response.EnsureSuccessStatusCode();
@@ -145,6 +175,13 @@ namespace HueSyncClone.Hue
             var json = await response.Content.ReadAsStringAsync();
 
             JsonConvert.PopulateObject(json, light);
+        }
+
+        private static StringContent JsonContent(object content)
+        {
+            var json = JsonConvert.SerializeObject(content);
+            var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
+            return stringContent;
         }
     }
 }
