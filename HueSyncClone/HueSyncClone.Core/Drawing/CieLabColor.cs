@@ -4,6 +4,12 @@ namespace HueSyncClone.Core.Drawing
 {
     public struct CieLabColor : IEquatable<CieLabColor>
     {
+        // 6.0 / 29.0
+        private const double Delta = 0.206896551724138;
+        private const double Xn = 95.047;
+        private const double Yn = 100.0;
+        private const double Zn = 108.883;
+
         public double L { get; }
         public double A { get; }
         public double B { get; }
@@ -17,25 +23,35 @@ namespace HueSyncClone.Core.Drawing
 
         public static CieLabColor FromXyz(XyzColor color)
         {
-            double F(double t) => t > 0.00885645167903563/* Math.Pow(6.0 / 29.0, 3) */
+            double F(double t) => t > 0.00885645167903563/* Math.Pow(Delta, 3) */
                 ? Math.Pow(t, 1.0 / 3.0)
-                : 7.78703703703704/* 1.0 / 3.0 * Math.Pow(29.0 / 6.0, 2)*/ * t + 0.137931034482759/* 4.0 / 29.0 */;
+                : 7.78703703703704/* 1.0 / (3.0 * Math.Pow(Delta, 2))*/ * t + 0.137931034482759/* 4.0 / 29.0 */;
 
             var x = color.X * 100;
             var y = color.Y * 100;
             var z = color.Z * 100;
 
-            var xn = 95.047;
-            var yn = 100.0;
-            var zn = 108.883;
-
-            var fYPerYn = F(y / yn);
+            var fYPerYn = F(y / Yn);
 
             return new CieLabColor
             (
                 116.0 * fYPerYn - 16.0,
-                500.0 * (F(x / xn) - fYPerYn),
-                200.0 * (fYPerYn - F(z / zn))
+                500.0 * (F(x / Xn) - fYPerYn),
+                200.0 * (fYPerYn - F(z / Zn))
+            );
+        }
+
+        public XyzColor ToXyzColor()
+        {
+            double NegateF(double t) => t > Delta
+                ? Math.Pow(t, 3)
+                : 3 * Math.Pow(Delta, 2) * (t - 4 / 29.0);
+
+            return new XyzColor
+            (
+                Xn * NegateF((L + 16) / 116 + A / 500) / 100.0,
+                Yn * NegateF((L + 16) / 116) / 100.0,
+                Zn * NegateF((L + 16) / 116 - B / 200) / 100.0
             );
         }
 

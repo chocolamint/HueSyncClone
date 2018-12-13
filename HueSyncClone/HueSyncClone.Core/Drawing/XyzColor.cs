@@ -36,6 +36,28 @@ namespace HueSyncClone.Core.Drawing
             );
         }
 
+        public Color ToRgbColor()
+        {
+            double Unlinear(double c)
+            {
+                const double a = 0.055;
+                return c <= 0.0031308
+                    ? 12.92 * c
+                    : (1 + a) * Math.Pow(c, 1 / 2.4) - a;
+            }
+
+            var r = 3.2406 * X + -1.5372 * Y + -0.4986 * Z;
+            var g = -0.9689 * X + 1.8758 * Y + 0.0415 * Z;
+            var b = 0.0557 * X + -0.2040 * Y + 1.0570 * Z;
+
+            return Color.FromArgb
+            (
+                (int)Math.Round(Unlinear(r) * 255, 0),
+                (int)Math.Round(Unlinear(g) * 255, 0),
+                (int)Math.Round(Unlinear(b) * 255, 0)
+            );
+        }
+
         public bool Equals(XyzColor other)
         {
             return X.Equals(other.X) && Y.Equals(other.Y) && Z.Equals(other.Z);

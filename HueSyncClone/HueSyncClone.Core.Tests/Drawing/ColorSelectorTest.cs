@@ -55,6 +55,16 @@ namespace HueSyncClone.Drawing
             );
         }
 
+        [Theory]
+        [InlineData(100, 0.00526049995830391, -0.010408184525267927, 255, 255, 255)]
+        [InlineData(54.31101910924566, 41.78198588920223, 58.46714536715948, 211, 96, 21)]
+        public void TestLabToRgb(double l, double a, double b, int red, int green, int blue)
+        {
+            Assert.Equal(Color.FromArgb(red, green, blue),
+                new CieLabColor(l, a, b).ToXyzColor().ToRgbColor()
+            );
+        }
+
         [Fact]
         public void TestKmeansPlusPlus()
         {
