@@ -39,7 +39,10 @@ namespace HueSyncClone.Drawing
 
                 var selections = KmeansPlusPlus(labColors, labSpace, count, _randomSeed);
 
-                return selections.Select(x => labSpace.GetCentroid(x)).Select(x => x.ToXyzColor().ToRgbColor());
+                return selections.GroupBy(x => x.Cluster, x => x.Color)
+                                 .OrderByDescending(x => x.Count())
+                                 .Select(x => labSpace.GetCentroid(x.ToArray()))
+                                 .Select(x => x.ToXyzColor().ToRgbColor());
             }
         }
 
@@ -103,13 +106,13 @@ namespace HueSyncClone.Drawing
             }
         }
 
-        internal static IEnumerable<List<TColor>> KmeansPlusPlus<TColor>(IEnumerable<TColor> colors, ISpace<TColor> space, int count, int? seed = null)
+        internal static (TColor Color, int Cluster)[] KmeansPlusPlus<TColor>(TColor[] colors, ISpace<TColor> space, int count, int? seed = null)
         {
-            var points = colors.ToArray();
+            var points = colors.Select(x => (Color: x, Cluster: -1)).ToArray();
             var random = seed.HasValue ? new Random(seed.Value) : new Random();
 
             var initialCentroidIndex = random.Next(points.Length);
-            var centroids = new List<(TColor color, int index)> { (points[initialCentroidIndex], initialCentroidIndex) };
+            var centroids = new List<(TColor Color, int index)> { (points[initialCentroidIndex].Color, initialCentroidIndex) };
             foreach (var c in SelectCentroids().Take(count - 1))
             {
                 centroids.Add(c);
@@ -119,15 +122,17 @@ namespace HueSyncClone.Drawing
             while (true)
             {
                 var clusters = Enumerable.Range(0, count).Select(_ => new List<TColor>()).ToArray();
-                foreach (var point in points)
+                for (var i = 0; i < points.Length; i++)
                 {
-                    var clusterIndex = GetNearestCentroidIndex(point);
-                    clusters[clusterIndex].Add(point);
+                    var point = points[i];
+                    var clusterIndex = GetNearestCentroidIndex(point.Color);
+                    points[i].Cluster = clusterIndex;
+                    clusters[clusterIndex].Add(point.Color);
                 }
 
                 if (Enumerable.Range(0, count).All(i => preClusters[i] != null && clusters[i].SequenceEqual(preClusters[i])))
                 {
-                    return clusters.OrderByDescending(x => x.Count);
+                    return points;
                 }
 
                 for (var i = 0; i < count; i++)
@@ -135,7 +140,7 @@ namespace HueSyncClone.Drawing
                     var newCentroid = space.GetCentroid(clusters[i]);
                     centroids[i] = (newCentroid, centroids[i].index);
                     // move centroid
-                    points[centroids[i].index] = newCentroid;
+                    points[centroids[i].index].Color = newCentroid;
                     preClusters[i] = clusters[i];
                 }
             }
@@ -146,7 +151,7 @@ namespace HueSyncClone.Drawing
                 var minIndex = -1;
                 for (var i = 0; i < centroids.Count; i++)
                 {
-                    var d = space.GetDistance(centroids[i].color, color);
+                    var d = space.GetDistance(centroids[i].Color, color);
                     if (d < minDistance)
                     {
                         minDistance = d;
@@ -159,7 +164,7 @@ namespace HueSyncClone.Drawing
 
             IEnumerable<(TColor color, int index)> SelectCentroids()
             {
-                var distances = points.Select(x => centroids.Min(c => Math.Pow(space.GetDistance(x, c.color), 2))).ToArray();
+                var distances = points.Select(x => centroids.Min(c => Math.Pow(space.GetDistance(x.Color, c.Color), 2))).ToArray();
                 var sum = distances.Sum();
 
                 while (true)
@@ -172,9 +177,9 @@ namespace HueSyncClone.Drawing
                         if (d > init)
                         {
                             // duplicate
-                            if (centroids.Any(c => Math.Abs(space.GetDistance(points[i], c.color)) < double.Epsilon)) break;
+                            if (centroids.Any(c => Math.Abs(space.GetDistance(points[i].Color, c.Color)) < double.Epsilon)) break;
 
-                            yield return (points[i], i);
+                            yield return (points[i].Color, i);
                             break;
                         }
                     }

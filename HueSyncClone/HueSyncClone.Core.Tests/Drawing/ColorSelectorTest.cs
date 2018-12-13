@@ -37,10 +37,15 @@ namespace HueSyncClone.Drawing
                 Color.FromArgb(0, 0, 0),
             };
 
-            var selected = ColorPicker.KmeansPlusPlus(colors, new RgbSpace(), 2, 0).ToArray();
+            var clustered = ColorPicker.KmeansPlusPlus(colors, new RgbSpace(), 2, 0).ToArray();
 
-            Assert.Equal(new[] { Color.FromArgb(0, 0, 0), Color.FromArgb(0, 0, 0) }, selected[0]);
-            Assert.Equal(new[] { Color.FromArgb(255, 255, 255), Color.FromArgb(254, 254, 254) }, selected[1]);
+            Assert.Equal(new[]
+            {
+                (Color.FromArgb(255, 255, 255), 1),
+                (Color.FromArgb(254, 254, 254), 1),
+                (Color.FromArgb(0, 0, 0), 0),
+                (Color.FromArgb(0, 0, 0), 0),
+            }, clustered);
         }
 
         [Theory]
