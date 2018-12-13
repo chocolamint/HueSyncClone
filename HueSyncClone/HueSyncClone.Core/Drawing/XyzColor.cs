@@ -30,9 +30,9 @@ namespace HueSyncClone.Core.Drawing
 
             return new XyzColor
             (
-                0.4124 * r + 0.3576 * g + 0.1805 * b,
-                0.2126 * r + 0.7152 * g + 0.0722 * b,
-                0.0193 * r + 0.1192 * g + 0.9505 * b
+                Math.Round(0.4124 * r + 0.3576 * g + 0.1805 * b, 4),
+                Math.Round(0.2126 * r + 0.7152 * g + 0.0722 * b, 4),
+                Math.Round(0.0193 * r + 0.1192 * g + 0.9505 * b, 4)
             );
         }
 

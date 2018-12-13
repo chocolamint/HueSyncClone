@@ -45,26 +45,6 @@ namespace HueSyncClone.Drawing
             }
         }
 
-        [Theory]
-        [InlineData(255, 255, 255, 100, 0.00526049995830391, -0.010408184525267927)]
-        [InlineData(211, 96, 21, 54.31101910924566, 41.78198588920223, 58.46714536715948)]
-        public void TestRgbToLab(int red, int green, int blue, double l, double a, double b)
-        {
-            Assert.Equal(new CieLabColor(l, a, b),
-                CieLabColor.FromXyz(XyzColor.FromRgb(Color.FromArgb(red, green, blue)))
-            );
-        }
-
-        [Theory]
-        [InlineData(100, 0.00526049995830391, -0.010408184525267927, 255, 255, 255)]
-        [InlineData(54.31101910924566, 41.78198588920223, 58.46714536715948, 211, 96, 21)]
-        public void TestLabToRgb(double l, double a, double b, int red, int green, int blue)
-        {
-            Assert.Equal(Color.FromArgb(red, green, blue),
-                new CieLabColor(l, a, b).ToXyzColor().ToRgbColor()
-            );
-        }
-
         [Fact]
         public void TestKmeansPlusPlus()
         {
@@ -84,7 +64,7 @@ namespace HueSyncClone.Drawing
 
         [Theory]
         [InlineData("image1", "#ddcab3", "#578dd6", "#4f4446")]
-        [InlineData("image2", "#140823", "#4a1b86", "#c4b2dc")]
+        [InlineData("image2", "#150823", "#4a1b86", "#c4b2dc")]
         public void TestAll(string imageName, string expected1, string expected2, string expected3)
         {
             using (var stream = GetType().Assembly.GetManifestResourceStream($"HueSyncClone.Images.{imageName}.jpg"))

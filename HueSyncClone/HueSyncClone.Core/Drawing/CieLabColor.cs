@@ -35,9 +35,9 @@ namespace HueSyncClone.Core.Drawing
 
             return new CieLabColor
             (
-                116.0 * fYPerYn - 16.0,
-                500.0 * (F(x / Xn) - fYPerYn),
-                200.0 * (fYPerYn - F(z / Zn))
+                Math.Round(116.0 * fYPerYn - 16.0, 4),
+                Math.Round(500.0 * (F(x / Xn) - fYPerYn), 4),
+                Math.Round(200.0 * (fYPerYn - F(z / Zn)), 4)
             );
         }
 
@@ -47,11 +47,15 @@ namespace HueSyncClone.Core.Drawing
                 ? Math.Pow(t, 3)
                 : 3 * Math.Pow(Delta, 2) * (t - 4 / 29.0);
 
+            var x = Xn * NegateF((L + 16) / 116 + A / 500);
+            var y = Yn * NegateF((L + 16) / 116);
+            var z = Zn * NegateF((L + 16) / 116 - B / 200);
+
             return new XyzColor
             (
-                Xn * NegateF((L + 16) / 116 + A / 500) / 100.0,
-                Yn * NegateF((L + 16) / 116) / 100.0,
-                Zn * NegateF((L + 16) / 116 - B / 200) / 100.0
+                Math.Round(x / 100.0, 4),
+                Math.Round(y / 100.0, 4),
+                Math.Round(z / 100.0, 4)
             );
         }
 
