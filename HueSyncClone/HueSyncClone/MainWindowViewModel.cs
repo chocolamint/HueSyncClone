@@ -27,6 +27,8 @@ namespace HueSyncClone
         private bool _isFileDroppable;
         private bool _synchronizeScreen;
 
+        private int _changing;
+
         public IHueUserNameStore HueUserNameStore { get; set; } = new FileHueUserNameStore();
 
         public ColorPicker ColorPicker { get; set; } = new ColorPicker(new Random().Next());
@@ -104,7 +106,7 @@ namespace HueSyncClone
             IsConnecting = false;
             IsAuthenticated = true;
 
-            _timer = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, OnTick, Dispatcher.CurrentDispatcher);
+            _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(200), DispatcherPriority.Normal, OnTick, Dispatcher.CurrentDispatcher);
 
             IsFileDroppable = true;
         }
@@ -135,25 +137,35 @@ namespace HueSyncClone
 
         private async Task ChangeColorsAsync(System.Drawing.Bitmap bitmap)
         {
-            var tasks = new List<Task>();
-
-            var colors = ColorPicker.PickColors(bitmap, _lights.Count).Select(x => Color.FromRgb(x.R, x.G, x.B)).ToArray();
-
-            if (colors.SequenceEqual(Colors)) return;
-
-            Colors.Clear();
-            foreach (var (color, index) in colors.Select((x, i) => (x, i)))
+            if (Interlocked.CompareExchange(ref _changing, 1, 0) == 0)
             {
-                Colors.Add(color);
+                try
+                {
+                    var tasks = new List<Task>();
 
-                var xy = XyColor.FromRgb(color.R, color.G, color.B);
-                var brightness = new[] { color.R, color.G, color.B }.Max();
+                    var colors = ColorPicker.PickColors(bitmap, _lights.Count).Select(x => Color.FromRgb(x.R, x.G, x.B)).ToArray();
 
-                var task = _lights[index].SetColorAsync(xy, brightness);
-                tasks.Add(task);
+                    if (colors.SequenceEqual(Colors)) return;
+
+                    Colors.Clear();
+                    foreach (var (color, index) in colors.Select((x, i) => (x, i)))
+                    {
+                        Colors.Add(color);
+
+                        var xy = XyColor.FromRgb(color.R, color.G, color.B);
+                        var brightness = new[] { color.R, color.G, color.B }.Max();
+
+                        var task = _lights[index].SetColorAsync(xy, brightness);
+                        tasks.Add(task);
+                    }
+
+                    await Task.WhenAll(tasks);
+                }
+                finally
+                {
+                    _changing = 0;
+                }
             }
-
-            await Task.WhenAll(tasks);
         }
 
         private void SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
