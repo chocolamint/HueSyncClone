@@ -32,6 +32,7 @@ namespace HueSyncClone
         public IHueUserNameStore HueUserNameStore { get; set; } = new FileHueUserNameStore();
 
         public ColorPicker ColorPicker { get; set; } = new ColorPicker(new Random().Next());
+        public ImageSlicer ImageSlicer { get; set; } = new ImageSlicer();
 
         public bool IsConnecting
         {
@@ -119,7 +120,7 @@ namespace HueSyncClone
 
                 using (var bitmap = (System.Drawing.Bitmap)System.Drawing.Image.FromFile(ImagePath))
                 {
-                    await ChangeColorsAsync(bitmap);
+                    await ChangeColorsAsync(() => ColorPicker.PickColors(bitmap, _lightCount));
                 }
             }
         }
@@ -130,12 +131,16 @@ namespace HueSyncClone
             {
                 using (var bitmap = ScreenShot.CaptureScreen())
                 {
-                    await ChangeColorsAsync(bitmap);
+                    await ChangeColorsAsync(() =>
+                    {
+                        var slices = ImageSlicer.SliceImage(bitmap, _lightCount);
+                        return slices.Select(x => ColorPicker.PickColors(x, 4).First());
+                    });
                 }
             }
         }
 
-        private async Task ChangeColorsAsync(System.Drawing.Bitmap bitmap)
+        private async Task ChangeColorsAsync(Func<IEnumerable<System.Drawing.Color>> pickColors)
         {
             if (Interlocked.CompareExchange(ref _changing, 1, 0) == 0)
             {
@@ -143,7 +148,7 @@ namespace HueSyncClone
                 {
                     var tasks = new List<Task>();
 
-                    var colors = ColorPicker.PickColors(bitmap, _lights.Count).Select(x => Color.FromRgb(x.R, x.G, x.B)).ToArray();
+                    var colors = pickColors().Select(x => Color.FromRgb(x.R, x.G, x.B)).ToArray();
 
                     if (colors.SequenceEqual(Colors)) return;
 
