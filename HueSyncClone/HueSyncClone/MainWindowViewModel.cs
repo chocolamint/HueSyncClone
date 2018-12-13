@@ -179,6 +179,7 @@ namespace HueSyncClone
                         var brightness = new[] { color.R, color.G, color.B }.Max();
 
                         var task = _lights[index].SetColorAsync(xy, brightness);
+                        Console.WriteLine($"{index}: {sw.ElapsedMilliseconds:N0}ms");
                         tasks.Add(task);
                     }
 

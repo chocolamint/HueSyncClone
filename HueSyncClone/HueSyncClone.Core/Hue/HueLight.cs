@@ -66,28 +66,11 @@ namespace HueSyncClone.Hue
             _bridge = bridge;
         }
 
-        public Task TurnOffAsync(CancellationToken cancellationToken = default)
-            => _bridge.PutLightStateAndSynchronizeAsync(this, new { on = false }, cancellationToken);
-
-        public Task SetColorAsync(HueSaturationColor color, CancellationToken cancellationToken = default)
-            => _bridge.PutLightStateAndSynchronizeAsync(this, new { on = true, hue = color.Hue, sat = color.Saturation }, cancellationToken);
-
-        public Task SetColorAsync(XyColor color, CancellationToken cancellationToken = default)
-            => _bridge.PutLightStateAndSynchronizeAsync(this, new { on = true, xy = new[]{ color.X, color.Y } }, cancellationToken);
-
-        public Task SetColorAsync(ColorTemperature color, CancellationToken cancellationToken = default)
-            => _bridge.PutLightStateAndSynchronizeAsync(this, new { on = true, ct = color.Mired }, cancellationToken);
-
-        public Task SetBrightnessAsync(int brightness, CancellationToken cancellationToken = default)
-            => _bridge.PutLightStateAndSynchronizeAsync(this, new { bri = brightness }, cancellationToken);
-
-        public Task SetColorAsync(HueSaturationColor color, int brightness, CancellationToken cancellationToken = default)
-            => _bridge.PutLightStateAndSynchronizeAsync(this, new { on = true, hue = color.Hue, sat = color.Saturation, bri = brightness }, cancellationToken);
-
         public Task SetColorAsync(XyColor color, int brightness, CancellationToken cancellationToken = default)
-            => _bridge.PutLightStateAndSynchronizeAsync(this, new { on = true, xy = new[] { color.X, color.Y }, bri = brightness }, cancellationToken);
-
-        public Task SetColorAsync(ColorTemperature color, int brightness, CancellationToken cancellationToken = default)
-            => _bridge.PutLightStateAndSynchronizeAsync(this, new { on = true, ct = color.Mired, bri = brightness }, cancellationToken);
+        {
+            State.Xy = color;
+            State.Brightness = brightness;
+            return _bridge.PutLightStateAsync(this, new { on = true, xy = new[] { color.X, color.Y }, bri = brightness }, cancellationToken);
+        }
     }
 }

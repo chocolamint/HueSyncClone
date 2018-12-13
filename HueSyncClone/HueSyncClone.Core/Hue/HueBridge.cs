@@ -148,33 +148,17 @@ namespace HueSyncClone.Hue
             response.EnsureSuccessStatusCode();
         }
 
-        internal async Task PutLightStateAndSynchronizeAsync(HueLight light, object state, CancellationToken cancellationToken)
+        internal async Task PutLightStateAsync(HueLight light, object state, CancellationToken cancellationToken)
         {
-            await PutLightStateAsync(light, state, cancellationToken);
-            await SynchronizeLightAsync(light, cancellationToken);
-        }
-
-        private async Task PutLightStateAsync(HueLight light, object state, CancellationToken cancellationToken)
-        {
+            var sw = Stopwatch.StartNew();
             var response = await _httpClient.PutAsync(
                 $"http://{_ipAddress}/api/{UserName}/lights/{light.Id}/state",
                 JsonContent(state),
                 cancellationToken);
 
-            response.EnsureSuccessStatusCode();
-        }
-
-        private async Task SynchronizeLightAsync(HueLight light, CancellationToken cancellationToken)
-        {
-            var response = await _httpClient.GetAsync(
-                $"http://{_ipAddress}/api/{UserName}/lights/{light.Id}",
-                cancellationToken);
+            Console.WriteLine($"PutAsync:{sw.ElapsedMilliseconds:N0}ms");
 
             response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-
-            JsonConvert.PopulateObject(json, light);
         }
 
         private static StringContent JsonContent(object content)
