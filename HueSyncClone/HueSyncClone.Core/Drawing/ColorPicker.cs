@@ -30,9 +30,13 @@ namespace HueSyncClone.Drawing
             {
                 var colors = GetColors(thumb, width, height);
                 var xyzColors = colors.Select(x => XyzColor.FromRgb(x));
-                var labColors = xyzColors.Select(x => CieLabColor.FromXyz(x));
                 var labSpace = new CieLabSpace();
-                var selections = KmeansPlusPlus(labColors.ToArray(), labSpace, count, _randomSeed);
+                var labColors = xyzColors.Select(x => CieLabColor.FromXyz(x)).ToArray();
+
+                var palette = labColors.Distinct().ToArray();
+                if (palette.Length < count) return palette.Select(x => x.ToXyzColor().ToRgbColor());
+
+                var selections = KmeansPlusPlus(labColors, labSpace, count, _randomSeed);
 
                 return selections.Select(x => labSpace.GetCentroid(x)).Select(x => x.ToXyzColor().ToRgbColor());
             }
@@ -160,26 +164,14 @@ namespace HueSyncClone.Drawing
             {
                 centroids.Add(c);
             }
-
+            
             var preClusters = new List<TColor>[count];
             while (true)
             {
                 var clusters = Enumerable.Range(0, count).Select(_ => new List<TColor>()).ToArray();
-                for (var i = 0; i < points.Length; i++)
+                foreach (var point in points)
                 {
-                    var point = points[i];
-                    if (centroids.Any(x => x.index == i))
-                    {
-                        var dubug = space.GetDistance(point, centroids.FirstOrDefault(x => x.index == i).color);
-                    }
-
                     var clusterIndex = GetNearestCentroidIndex(point);
-
-                    if (centroids.Any(x => x.index == i) && clusterIndex != centroids.FindIndex(x => x.index == i))
-                    {
-                        Debugger.Break();
-                    }
-
                     clusters[clusterIndex].Add(point);
                 }
 
