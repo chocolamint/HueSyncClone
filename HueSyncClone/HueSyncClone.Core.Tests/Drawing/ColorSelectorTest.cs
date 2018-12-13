@@ -42,5 +42,15 @@ namespace HueSyncClone.Drawing
                 Assert.Equal(expectedB, colors[checkIndex].B);
             }
         }
+
+        [Theory]
+        [InlineData(255, 255, 255, 100, 0.00526049995830391, -0.010408184525267927)]
+        [InlineData(211, 96, 21, 54.31101910924566, 41.78198588920223, 58.46714536715948)]
+        public void TestRgbToLab(int red, int green, int blue, double l, double a, double b)
+        {
+            Assert.Equal(new CieLabColor(l, a, b),
+                ColorSelector.ToCieLabColor(ColorSelector.ToXyzColor(Color.FromArgb(red, green, blue)))
+            );
+        }
     }
 }
