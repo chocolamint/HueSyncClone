@@ -6,7 +6,7 @@ using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace HueSyncClone.Core.Drawing
+namespace HueSyncClone.Drawing
 {
     public class ColorSelector
     {

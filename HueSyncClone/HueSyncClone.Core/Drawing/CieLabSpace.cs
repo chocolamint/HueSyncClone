@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace HueSyncClone.Core.Drawing
+namespace HueSyncClone.Drawing
 {
     public struct CieLabSpace : ISpace<CieLabColor>
     {

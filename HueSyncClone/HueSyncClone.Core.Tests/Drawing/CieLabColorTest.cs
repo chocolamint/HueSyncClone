@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using HueSyncClone.Core.Drawing;
 using Xunit;
 
 namespace HueSyncClone.Drawing

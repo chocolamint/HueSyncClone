@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HueSyncClone.Core.Drawing
+namespace HueSyncClone.Drawing
 {
     public struct CieLabColor : IEquatable<CieLabColor>
     {
