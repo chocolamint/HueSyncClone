@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
 
-namespace HueSyncClone.Core.Drawing
+namespace HueSyncClone.Drawing
 {
     public struct XyzColor : IEquatable<XyzColor>
     {

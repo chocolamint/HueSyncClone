@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-using HueSyncClone.Core.Drawing;
 using Xunit;
 
 namespace HueSyncClone.Drawing

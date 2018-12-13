@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace HueSyncClone.Core.Drawing
+namespace HueSyncClone.Drawing
 {
     public interface ISpace<T>
     {

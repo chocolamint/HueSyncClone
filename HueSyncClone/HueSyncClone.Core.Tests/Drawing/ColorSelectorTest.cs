@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using HueSyncClone.Core.Drawing;
 using Xunit;
 
 namespace HueSyncClone.Drawing
@@ -17,7 +16,7 @@ namespace HueSyncClone.Drawing
             using (var stream = GetType().Assembly.GetManifestResourceStream($"HueSyncClone.Images.{imageName}.jpg"))
             using (var bitmap = (Bitmap)Image.FromStream(stream))
             {
-                var (thumb, width, height) = ColorSelector.Resize(bitmap, 72);
+                var (thumb, width, height) = ColorPicker.Resize(bitmap, 72);
                 using (thumb)
                 {
                     // thumb.Save(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), imageName + ".jpg"));
@@ -35,7 +34,7 @@ namespace HueSyncClone.Drawing
             using (var stream = GetType().Assembly.GetManifestResourceStream($"HueSyncClone.Images.{imageName}.jpg"))
             using (var bitmap = (Bitmap)Image.FromStream(stream))
             {
-                var colors = ColorSelector.GetColors(bitmap, width, height).ToList();
+                var colors = ColorPicker.GetColors(bitmap, width, height).ToList();
 
                 Assert.Equal(width * height, colors.Count);
                 var checkIndex = checkY * width + checkX;
@@ -53,24 +52,24 @@ namespace HueSyncClone.Drawing
                 Color.FromArgb(255, 255, 255),
                 Color.FromArgb(200, 200, 200),
                 Color.FromArgb(140, 24, 53),
-                Color.FromArgb(0, 0, 0)
+                Color.FromArgb(0, 0, 0),
             };
 
-            var selected = ColorSelector.KmeansPlusPlus(colors, new RgbSpace(), 2, 0);
+            var selected = ColorPicker.KmeansPlusPlus(colors, new RgbSpace(), 2, 0).ToArray();
 
             Assert.Equal(new[] { colors[2], colors[3] }, selected[0]);
             Assert.Equal(new[] { colors[0], colors[1] }, selected[1]);
         }
 
         [Theory]
-        [InlineData("image1", "#ddcab3", "#578dd6", "#4f4446")]
-        [InlineData("image2", "#150823", "#4a1b86", "#c4b2dc")]
+        [InlineData("image1", "#578dd6", "#ddcab3", "#4f4446")]
+        [InlineData("image2", "#4a1b86", "#150823", "#c4b2dc")]
         public void TestAll(string imageName, string expected1, string expected2, string expected3)
         {
             using (var stream = GetType().Assembly.GetManifestResourceStream($"HueSyncClone.Images.{imageName}.jpg"))
             using (var bitmap = (Bitmap)Image.FromStream(stream))
             {
-                var colors = new ColorSelector(0).SelectColor(bitmap, 3).ToArray();
+                var colors = new ColorPicker(0).PickColors(bitmap, 3).ToArray();
 
                 string ToHexString(Color color) => $"#{color.R:x2}{color.G:x2}{color.B:x2}";
 
