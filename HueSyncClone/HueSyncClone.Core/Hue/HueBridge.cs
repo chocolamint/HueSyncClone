@@ -156,8 +156,6 @@ namespace HueSyncClone.Hue
                 JsonContent(state),
                 cancellationToken);
 
-            Console.WriteLine($"PutAsync:{sw.ElapsedMilliseconds:N0}ms");
-
             response.EnsureSuccessStatusCode();
         }
 
