@@ -29,7 +29,7 @@ namespace HueSyncClone
 
         public IHueUserNameStore HueUserNameStore { get; set; } = new FileHueUserNameStore();
 
-        public ColorPicker ColorPicker { get; set; } = new ColorPicker();
+        public ColorPicker ColorPicker { get; set; } = new ColorPicker(new Random().Next());
 
         public bool IsConnecting
         {

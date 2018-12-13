@@ -11,16 +11,16 @@ namespace HueSyncClone.Drawing
 {
     public class ColorPicker
     {
-        private readonly int? _seed;
+        private readonly int? _randomSeed;
 
         public ColorPicker()
         {
 
         }
 
-        internal ColorPicker(int seed)
+        public ColorPicker(int randomSeed)
         {
-            _seed = seed;
+            _randomSeed = randomSeed;
         }
 
         public IEnumerable<Color> PickColors(Bitmap bitmap, int count)
@@ -32,7 +32,7 @@ namespace HueSyncClone.Drawing
                 var xyzColors = colors.Select(x => XyzColor.FromRgb(x));
                 var labColors = xyzColors.Select(x => CieLabColor.FromXyz(x));
                 var labSpace = new CieLabSpace();
-                var selections = KmeansPlusPlus(labColors.ToArray(), labSpace, count, _seed);
+                var selections = KmeansPlusPlus(labColors.ToArray(), labSpace, count, _randomSeed);
 
                 return selections.Select(x => labSpace.GetCentroid(x)).Select(x => x.ToXyzColor().ToRgbColor());
             }
