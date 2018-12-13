@@ -5,13 +5,14 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Threading;
 using HueSyncClone.Core;
 using HueSyncClone.Drawing;
 using HueSyncClone.Hue;
 using HueSyncClone.Models;
+using Color = System.Windows.Media.Color;
 
 namespace HueSyncClone
 {
@@ -76,27 +77,18 @@ namespace HueSyncClone
             Initialize();
         }
 
-        private void OnTick(object sender, EventArgs e)
+        private async void OnTick(object sender, EventArgs e)
         {
             if (SynchronizeScreen)
             {
                 using (var bitmap = ScreenShot.CaptureScreen())
                 {
-                    Colors.Clear();
-                    var colors = ColorPicker.PickColors(bitmap, _lights.Count);
-                    foreach (var (color, index) in colors.Select((x, i) => (x, i)))
-                    {
-                        Colors.Add(Color.FromRgb(color.R, color.G, color.B));
-
-                        var xy = XyColor.FromRgb(color.R, color.G, color.B);
-                        var brightness = new[] { color.R, color.G, color.B }.Max();
-                        _lights[index].SetColorAsync(xy, brightness);
-                    }
+                    await ChangeColorsAsync(bitmap);
                 }
             }
         }
 
-        private void OnFileSelected(string[] filePaths)
+        private async void OnFileSelected(string[] filePaths)
         {
             if (IsFileDroppable)
             {
@@ -104,18 +96,30 @@ namespace HueSyncClone
 
                 using (var bitmap = (System.Drawing.Bitmap)System.Drawing.Image.FromFile(ImagePath))
                 {
-                    Colors.Clear();
-                    var colors = ColorPicker.PickColors(bitmap, _lights.Count);
-                    foreach (var (color, index) in colors.Select((x, i) => (x, i)))
-                    {
-                        Colors.Add(Color.FromRgb(color.R, color.G, color.B));
-
-                        var xy = XyColor.FromRgb(color.R, color.G, color.B);
-                        var brightness = new[] { color.R, color.G, color.B }.Max();
-                        _lights[index].SetColorAsync(xy, brightness);
-                    }
+                    await ChangeColorsAsync(bitmap);
                 }
             }
+        }
+
+        private async Task ChangeColorsAsync(System.Drawing.Bitmap bitmap)
+        {
+            var tasks = new List<Task>();
+
+            Colors.Clear();
+
+            var colors = ColorPicker.PickColors(bitmap, _lights.Count);
+            foreach (var (color, index) in colors.Select((x, i) => (x, i)))
+            {
+                Colors.Add(Color.FromRgb(color.R, color.G, color.B));
+
+                var xy = XyColor.FromRgb(color.R, color.G, color.B);
+                var brightness = new[] { color.R, color.G, color.B }.Max();
+
+                var task = _lights[index].SetColorAsync(xy, brightness);
+                tasks.Add(task);
+            }
+
+            await Task.WhenAll(tasks);
         }
 
         private async void Initialize()
