@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
+using HueSyncClone.Core;
 using HueSyncClone.Hue;
 using HueSyncClone.Models;
 
@@ -15,6 +16,7 @@ namespace HueSyncClone
     {
         private bool _isAuthenticated = true;
         private bool _isConnecting = true;
+        private string _imagePath;
 
         public IHueUserNameStore HueUserNameStore { get; set; } = new FileHueUserNameStore();
 
@@ -30,9 +32,23 @@ namespace HueSyncClone
             set => SetField(ref _isAuthenticated, value);
         }
 
+        public string ImagePath
+        {
+            get => _imagePath;
+            set => SetField(ref _imagePath, value);
+        }
+
+        public ICommand OnFileSelectedCommand { get; } 
+
         public MainWindowViewModel()
         {
+            OnFileSelectedCommand = new DelegateCommand<string[]>(OnFileSelected);
             Initialize();
+        }
+
+        private void OnFileSelected(string[] filePaths)
+        {
+            ImagePath = filePaths.First();
         }
 
         private async void Initialize()

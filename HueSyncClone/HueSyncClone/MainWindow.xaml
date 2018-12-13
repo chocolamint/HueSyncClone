@@ -4,7 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:local="clr-namespace:HueSyncClone"
+        xmlns:core="clr-namespace:HueSyncClone.Core"
         mc:Ignorable="d"
+        AllowDrop="True"
+        d:DataContext="{d:DesignInstance local:MainWindowViewModel}"
         Title="MainWindow" Height="450" Width="800">
     <Window.Resources>
         <system:Double x:Key="NotificationAreaHeight">32</system:Double>
@@ -16,6 +21,9 @@
         </Storyboard>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
+    <i:Interaction.Behaviors>
+        <core:DropFileBehavior Command="{Binding OnFileSelectedCommand}"/>
+    </i:Interaction.Behaviors>
     <Grid Background="#303039">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -58,6 +66,8 @@
                Visibility="{Binding IsConnecting, Converter={StaticResource BooleanToVisibilityConverter}}">
             Connecting...
         </Label>
+
+        <Image Grid.Row="1" Source="{Binding ImagePath}"/>
 
     </Grid>
 </Window>
