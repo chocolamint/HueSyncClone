@@ -46,7 +46,7 @@ namespace HueSyncClone.Drawing
             }
         }
 
-        internal static IEnumerable<Color> GetColors(Bitmap bitmap)
+        public IEnumerable<Color> GetColors(Bitmap bitmap)
         {
             var width = bitmap.Width;
             var height = bitmap.Height;

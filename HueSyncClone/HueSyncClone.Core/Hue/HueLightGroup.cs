@@ -19,7 +19,7 @@ namespace HueSyncClone.Hue
             _bridge = bridge;
         }
 
-        public async Task SetColorAsync(XyColor color, byte brightness, CancellationToken cancellationToken = default)
+        public async Task SetColorAsync(XyColor color, int brightness, CancellationToken cancellationToken = default)
         {
             Action.On = true;
             Action.Xy = color;

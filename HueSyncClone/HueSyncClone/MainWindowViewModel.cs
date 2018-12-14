@@ -5,14 +5,13 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using HueSyncClone.Core;
 using HueSyncClone.Drawing;
 using HueSyncClone.Hue;
 using HueSyncClone.Models;
-using Color = System.Windows.Media.Color;
 
 namespace HueSyncClone
 {
@@ -101,7 +100,7 @@ namespace HueSyncClone
             IsConnecting = false;
             IsAuthenticated = true;
 
-            _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(200), DispatcherPriority.Normal, OnTick, Dispatcher.CurrentDispatcher);
+            _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(1000), DispatcherPriority.Normal, OnTick, Dispatcher.CurrentDispatcher);
 
             IsFileDroppable = true;
         }
@@ -132,31 +131,64 @@ namespace HueSyncClone
             }
         }
 
+        private int _tickCount = 0;
+
         private async void OnTick(object sender, EventArgs e)
         {
             if (SynchronizeScreen)
             {
+                var tickCount = Interlocked.Increment(ref _tickCount);
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+
                 if (Interlocked.CompareExchange(ref _changing, 1, 0) == 0)
                 {
                     try
                     {
+                        Console.WriteLine($"[{tickCount}] start setting:" + sw.ElapsedMilliseconds);
+
                         using (var bitmap = ScreenShot.CaptureScreen())
                         {
-                            var color = ColorPicker.PickColors(bitmap, 1).First();
+                            Console.WriteLine($"[{tickCount}] ScreenShot.CaptureScreen:" + sw.ElapsedMilliseconds);
 
-                            Colors.Clear();
-                            Colors.Add(Color.FromRgb(color.R, color.G, color.B));
+                            var color = new CieLabSpace().GetCentroid(
+                                ColorPicker.GetColors(new ImageEditor().Resize(bitmap, 72)).Select(x => XyzColor.FromRgb(x)).Select(x => CieLabColor.FromXyz(x)).ToArray()
+                            ).ToXyzColor().ToRgbColor();
 
-                            var xy = XyColor.FromRgb(color.R, color.G, color.B);
-                            var brightness = new[] { color.R, color.G, color.B }.Max();
+                            Console.WriteLine($"[{tickCount}] color picked:" + sw.ElapsedMilliseconds);
 
-                            await _group.SetColorAsync(xy, brightness);
+                            var mediaColor = Color.FromRgb(color.R, color.G, color.B);
+
+                            if (Colors.Count >= 1 && Colors[0].Equals(mediaColor)) return;
+
+                            try
+                            {
+                                var xy = XyColor.FromRgb(color.R, color.G, color.B);
+                                var brightness = color.GetBrightness();
+
+                                Console.WriteLine($"[{tickCount}] #{color.R:X2}{color.G:X2}{color.B:X2} setting:" + sw.ElapsedMilliseconds);
+
+                                await _group.SetColorAsync(xy, (int)(brightness * HueLight.MaxBrightness));
+
+                                Colors.Clear();
+                                Colors.Add(mediaColor);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                Console.WriteLine($"[{tickCount}] #{color.R:X2}{color.G:X2}{color.B:X2} setting canceled.");
+                            }
+
+                            Console.WriteLine($"[{tickCount}] #{color.R:X2}{color.G:X2}{color.B:X2} set:" + sw.ElapsedMilliseconds);
                         }
                     }
                     finally
                     {
                         _changing = 0;
                     }
+                }
+                else
+                {
+                    Console.WriteLine($"[{tickCount}] busy:" + sw.ElapsedMilliseconds);
                 }
             }
         }
